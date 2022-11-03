@@ -1,21 +1,6 @@
-<?php
-
-$historyFile = 'data'.DIRECTORY_SEPARATOR.'history.json';
-if(isset($_POST['members'])){
-
-    if (! file_exists($historyFile)){
-        file_put_contents($historyFile, json_encode($_POST['members']));
-    }else{
-        $history = json_decode(file_get_contents($historyFile));
-        $newdata = array_merge($history, $_POST['members']);
-        file_put_contents($historyFile, json_encode($newdata));
-    }
-}
-
+<?php 
+$data = json_decode(file_get_contents('data'.DIRECTORY_SEPARATOR.'history.json'));
 ?>
-
-
-
 <!doctype html>
 <html lang="en">
   <head>
@@ -43,23 +28,13 @@ if(isset($_POST['members'])){
                             </tr>
                         </thead>
                         <tbody>
-                            
-                            <?php 
-                            if(isset($_POST['members']) ):
-
-                           
-                            
-                            //foreach($_POST['members'] AS $member): //
-                            foreach($_POST['members'] AS $member): ?>
+                            <?php foreach($data AS $member): ?>
                                 <tr>
-                                    <td> <?= $member['name'] ?></td>
-                                    <td> <?= $member['gender'] ?? "" ?></td>
-                                    <td> <?= implode(' , ',$member['fruits'] ?? []) ?></td>
+                                    <td> <?= $member->name ?></td>
+                                    <td> <?= $member->gender ?? "" ?></td>
+                                    <td> <?= implode(' , ',$member->fruits ?? []) ?></td>
                                 </tr>
-                            <?php 
-                            endforeach ;
-                            endif ;
-                             ?>
+                            <?php endforeach ?>
                         </tbody>
                     </table>
                 </div>

@@ -1,2 +1,7 @@
-define('SUPPORTED_EXTENSIONS',['php','txt','json']);
-$dataPath = "Data";
+define('SUPPORTED_EXTENSIONS',['php','txt','json']); //constant
+$dataPath = "data"; //variable
+id="members_number"; // html property
+
+class Fruit{} //class
+
+ 
