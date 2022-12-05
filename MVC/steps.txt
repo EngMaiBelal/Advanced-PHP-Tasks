@@ -1,0 +1,178 @@
+1- Create the structure like as laravel (folders, files).
+2- Download composer because:- 
+	- Autoloads the classes (we don't need to include all files, we use namespace just).
+	- Downloads the packages
+		a- composer init , answer the question.
+ 		b- we need this Package :-
+			- phpdotenv        	 // .env
+			- var-dumper       	 // dd();
+		c- comopser.json 
+			- type the nameSpace (App, Src) (the folders include the classes ).
+ 			- "Src\\": "src/"  	 // معناها اي فولدر داخل ال src ال name space بتاعته هتبدا بال Src.
+			- composer dumpautoload
+
+
+3- index.php 
+	- require Absolute path of autoload.php (مادام مش جابرني اشتغل relative يبقي الافضل abs)
+	- require Absolute path of web.php
+4- open terminal
+	- cd public
+	- php -S 127.0.0.1:8000
+5- build Routing System
+	- Class web.php
+		a- Use class Route 
+		b- Static methods (post, get , delete, patch, put, update)
+		c- the actions:-
+			- closure (callable)   // Route::get('/mai',function(){});
+			- Array   (array)      // Route::get('/mai',[HomeController::class, 'index']);
+			- string  (string)     // Route::get('/mai','App\Controllers\HomeController:@index');
+	- Class Route.php
+		a- depend on (Request class , Response class) 
+			- __construct(public Request $request, public Response $response) AS birdge  (setter to proberties)(dependency not inheritance)
+			- don`t use namespace for classes in the same namespace.
+			- وانا باخد اوبجكت من الكلاس ده في اي مكان اباصيله ال request, response as parameters. 
+			
+
+		b- contain allMethods (get, post, .....)  
+			- Arrguments (string $url, callable|array|string  $action )
+			- Pusher all urls & actions in $routes=['method_name'=>['$url'=>$ction]]
+
+		c-  هخزن اي حاجه انا كديفيلوبر بكتبها في ملف الويب في ال arr routes
+		          وبالتالي اي حاجه المستخدم هيكتبها هقارن هي موجوده فيه والا لا
+
+		d- resolve() 
+			- Use  ($method, $action, $data in RequestClass)
+			- Handle errors (404, 405)
+        		- call action After Handeling both the errors and actions:
+    				- $action = self::$routes[$method][$url] ?? null;
+				- $this->errorHandle($url, $method);
+				- $this->actionHandle($action, $data);
+
+		e- errorHandle() 
+			- by flag / loop $routes / search for comparing:-
+		        	- $method: as a value .
+				- $url   : as a key (array_key_exists()) .
+
+		f- actionHandle() 
+		     	- call_user_func_array() with this args ( $action, [$data[]):-                    2:19:17 part1 mvc
+				- After explode $action ( [new $action[0], $action[1]], [$data]);
+            			- الاكشن لو محتاج بارامتر او ملوش فطريقه الانفوك مختلفه
+            			- بتروح تنده ع الفانكشن وهي تباصي arg
+
+	- Class Request.php
+		a- request type methods 		// (strtolower($_SERVER['REQUEST_METHOD'])).
+		b- data                 		// through [url ($_GET) | header($_POST) | whatever($_REQUEST)].
+		c- url				
+		     - $_SERVER['REQUEST_URI']
+		     - Handle URL ('/home')|('home') by Helpers (SOLID)
+	- Helpers: 
+		a- fun موجوده علي مستوي المشروع كله اقدر استخدمها في اي حته
+		b-		    بيكون عباره عن ملف جواه funs بس
+		c- composer.json
+		     - "autoload": {"psr-4": {هنا بكتب ال namespace},"files":[هنا بكتب ملفات وبيحضرالملفات علي مستوي المشروع helpers]} 
+		     - composer dumpautoload	
+
+6- build Views(Inheritance )
+
+	1- Resources	
+	    a- Folders Structure
+		-Components
+		-Errors
+		-Layouts-> app.php (parent view)
+		-Views-> Dashboard-> index.php (child view)
+
+	2-Src -> Resources -> 
+	    a- HomeController.php (class)
+		-return view('dashboard.index',['name'=>'mai']);
+			
+	    b- helpers
+		- view()  return ----> View::make($view,$data)
+		- abort() return ----> View::makeError($statusCode)
+		- هعمل asset, url حد ليه علاقه بال (http, https)
+	
+
+	    c- Class View:-
+
+	       I- make ($view, $data=[]--->($name))
+		 	1- get base view                  (app.php)(outbut buffering OR get_file_content علشان مفيش داتا متباصه)
+        	 	2- get base view title , content  (regex)($matches[0])
+        	 	3- get child view                 ($viewPath)(must outbut buffering) ---> عشان الداتا اللي هيباصيها في الفيو
+        		4- get child view title , content (regex)($matches[1]) 
+		 	5- mixer                           
+		   - outbut buffering 
+				- ob_start();
+        			- include resource_layout_path('....');
+        			- return ob_get_clean();                            //   تمهل وورجعلي القيم ك string 
+		   - viewPathBulider ----> view(dashboard.index) || view(dashboard/index)
+			- str_contains  ( اللي هدور عليه  ,المكان اللي هدور فيه )
+			- str_replace   (اللي هدور فيه,  اهستبدله بايه,  اللي بدور عليه )
+
+		   - Different between Reference and Return:-
+			- include resource_view_path(self::viewPathBulider($view)); // $view by return
+
+        		- self::viewPathBulider($view);                             // update $view by refrence
+        		  include resource_view_path($view);                        
+  
+		   - get baseViewVars, contentViewVars by RegularExpression
+			- Built-in-methods  1- // str_contains() // str_replace()    // sub_string()
+					    2- // strtok()       // stpos()          // strlen()  
+					    3- // array_walk()   // array_filter()   // count()
+					    4- // preg_match()   // preg_match_all() //  
+		   - mixer ( عاوز اخد من ال index واحط في ال app) with arg ($baseView,$contentView)
+			- str_replace ($baseViewVars  $contentViewVars  in $baseView )
+                                  - الناتج بتاع الأولي هوه دخل التانيه
+                                  - علشان حتي لو بدلت الاماكن  ميمشيش بالترتيب يمشي علي حسب ال key يظبط الدنيا ويماتش
+			
+		II- makeError($statusCode)
+			- include 404, 405.
+			- abort helper.			      
+
+		III- use package phpdotenv
+			- وظيفه الباكدج انها بتعمل لووود للي جوه ال .env وتخزنه في ال $_ENV
+			- create file .env write APP_NAME=MVC 
+			- write {{title=<?= env('APP_Name') ?>}} in index.php
+			- load(),  safeLoad()  ---> thrown exception if .env مش موجود
+			- (public > index.php) 
+				- قبل الراوت لازم يكون ناده ع الانف
+				- $dotenv = Dotenv::createImmutable(base_path());
+			  	- $dotenv->safeLoad();
+
+
+7-App class (Src-> Application.php )
+	- is responible for loading all dependences on all application 
+	- هحط فيه كل حاجه كانت في ال index (__constract, run()) 
+	- هكتب بس في ملف ال index ------->  app()->run();
+	- make helper app();
+	- 
+		
+		
+
+
+parse???
+dump dd???
+
+
+8-problems
+	*** \r\n task.php مش ظابطه	  
+	*** http://127.0.0.1:8000/   404 not found
+	*** ازاي اورث فانكشن ابستراكت ببرامتر مره ومره لا
+	*** content فاضي readabledata
+	*** امتي لازم تكون استاتيك افرق بين الاكسس
+********************************************************************************************************
+notes / validation  
+$validator = Validator::make($data, $rule,$messages,$attributes);   
+// method make return objects-> fails()
+
+$data = ['first_name'=>'mai','emai'=>'mai@gmail.com'];            // required
+$rules= ['first_name'=> '['required',new Uppercase],              // required
+	 'email'     => 'required|min:5|between:7,10'
+        ];
+
+$messages=['email.required'=>'the........'];                       // optional
+$attribute=['first_name'=> 'First Name'] //  هغير اسماء الinputsللمستخدم علي مستوي الريكوست اي كان بنده من اي كنترولر  // optional
+
+اللارفل بتضرب ايرور في الفلاديشين اتوماتيك 
+**************************
+هيعمل جنريت للماسدج
+محتاج يعرف انهي field عشان نشيل كلمه attributويستبدلها
+وانهي rule عشان اعمل جنريت المسادج
